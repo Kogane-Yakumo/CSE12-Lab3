@@ -174,10 +174,10 @@ first:
 	ble t2, t1, newSpace
 
 newLine:
+	beq t0, t1, done
 	write_to_buffer(0x0a)
 	print_str(newline)
 	addi t1, t1, 1
-	blt t0, t1, done
 	j first
 
 newSpace:
