@@ -7,12 +7,11 @@
 #             CSE 12, Computer Systems and Assembly Language
 #             UC Santa Cruz, Spring 2023
 #
-# Description: This program generates a right triangle of a user chosen size
-#              from asterisks and spaces in an output file.
+# Description: This program generates a pattern with stars, 
+#              dollar signs, and the character ‘0’.
 #
 #
 ##########################################################################
-
 .macro exit #macro to exit program
 	li a7, 10
 	ecall
@@ -32,6 +31,11 @@
 	addi %x, a0, 0
 	.end_macro
 	
+.macro print_n(%x)#macro to input integer n into register x
+	addi a0,%x, 0
+	li a7, 1
+	ecall
+.end_macro
 
 .macro 	file_open_for_write_append(%str)
 	la a0, %str
@@ -61,7 +65,7 @@
 	
 
 .macro write_to_buffer(%char)
-	
+	#NOTE:this macro can add ONLY 1 character byte at a time to the file buffer!
 	
 	addi sp, sp, -16
 	sd t0, 0(sp)
@@ -124,17 +128,19 @@
 	ecall
 .end_macro
 
-.data	
+.data
 	prompt: .asciz  "Enter the height of the pattern (must be greater than 0):"
 	invalidMsg: .asciz  "Invalid Entry!"
-	newline: .asciz  "\n" #this prints a newline
+	newLine: .asciz  "\n"
+	star_dollar: .asciz  "*$"
+	dollar: .asciz  "$"
 	star: .asciz "*"
 	blankspace: .asciz " "
 	outputMsg: .asciz  " display pattern saved to lab3_output.txt "
 	filename: .asciz "lab3_output.txt"
-
+	Zero:.asciz"0"
+	
 .text
-
 	file_open_for_write_append(filename)
 	#a0 now contaimns the file descriptor (i.e. ID no.)
 	#save to t6 register
@@ -144,63 +150,55 @@
 	
 	#for utilsing macro write_to_buffer, here are tips:
 	#0x2a is the ASCI code input for star(*)
-	#0x20  is the ASCI code input for  blankspace
-	#0x0a  is the ASCI code input for  newline (/n)
+	#0x24 is the ASCI code input for dollar($)
+	#0x30  is the ASCI code input for  the character '0'
+	#0x0a  is the ASCI code input for  newLine (/n)
 
 	
 	#START WRITING YOUR CODE FROM THIS LINE ONWARDS
 	#DO NOT  use the registers a0, a1, a7, t6, sp anywhere in your code.
 	
-	#................ your code here..........................................................#
+	#................ your code starts here..........................................................#
+
 # REGISTER USAGE
 # t0: user input
 # t1: current line
 # t2: current character
-
+	
 askInput:
 	print_str(prompt)
-	print_str(newline)
+	print_str(newLine)
 	read_n(t0)
 	li t1, 1
 	bgt t0, zero, first
 	print_str(invalidMsg)
-	print_str(newline)
+	print_str(newLine)
 	j askInput
 
 first:
-	write_to_buffer(0x2a)
-	print_str(star)
+	write_to_buffer(0x24)
 	li t2, 2
-	ble t2, t1, newSpace
+	ble t2, t1, newString
 
-newLine:
-	beq t0, t1, done
+next:
+	write_to_buffer(0x30)
 	write_to_buffer(0x0a)
-	print_str(newline)
 	addi t1, t1, 1
+	blt t0, t1, Exit
 	j first
 
-newSpace:
-	beq t1, t2, newStar
-	beq t0, t1, newStar
-	write_to_buffer(0x20)
-	print_str(blankspace)
-	addi t2, t2, 1
-	j newSpace
-
-newStar:
+newString:
 	write_to_buffer(0x2a)
-	print_str(star)
+	write_to_buffer(0x24)
 	addi t2, t2, 1
-	bgt t2, t1, newLine
-	j newStar
+	bgt t2, t1, next
+	j newString
 
-done: 
-		
+	#................ your code ends here..........................................................#
 	
 	#END YOUR CODE ABOVE THIS COMMENT
 	#Don't change anything below this comment!
-	
+Exit:	
 	#write null character to end of file
 	write_to_buffer(0x00)
 	
@@ -208,11 +206,9 @@ done:
 	fileWrite(t6, 0x10040008,0x10040000)
 	addi t5, a0, 0
 	
-	print_str(newline)
+	print_str(newLine)
 	print_str(outputMsg)
 	
 	exit
 	
 	
-	
-
